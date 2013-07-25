@@ -1,0 +1,30 @@
+{
+  "name": "node-daapd",
+  "version": "0.0.0",
+  "description": "A DAAP Server written for Node.js",
+  "main": "app.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spruce/node-daapd.git"
+  },
+  "keywords": [
+    "daap",
+    "server",
+    "itunes"
+  ],
+  "author": "Felix Fichte",
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "dependencies": {
+    "mdns": "~1.1.0",
+    "request": "~2.22.0",
+    "async": "~0.2.9",
+    "express": "~3.3.4"
+  }
+}
