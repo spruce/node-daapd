@@ -4,6 +4,6 @@ var Song = require('../lib/song').Song;
 daap.createServer({
   advertise:true,
   songs: [new Song({
-          file: 'music/Monster.mp3'
+          file: 'music/short.mp3'
         })]
 }).listen(3689);
