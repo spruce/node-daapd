@@ -5,5 +5,6 @@ daap.createServer({
   advertise:true,
   songs: [new Song({
           file: 'music/short.mp3'
-        })]
+        })],
+  name:"spruce"
 }).listen(3689);
