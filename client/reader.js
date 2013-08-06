@@ -29,11 +29,12 @@ function readData(buffer, from, length, tagName){
       str = buffer.readUInt32BE(from);
       break;// 3522317294003940547 = 
     case 7: // 8-byte integer, tends to be represented in hex rather than numerical form
+      
       //console.log("tagName:", tagName); // 3522317294003940547
       //console.log("buf:", buffer.toString('hex', 4, 8));
       //console.log("diff:", 3522317294003940547 - buffer.readUInt32BE(from) * 4294967295 + buffer.readUInt32BE(from + 4));
       //console.log("nummer:",buffer.readUInt32BE(from) * 4294967295 + buffer.readUInt32BE(from + 4));
-      str = buffer.toString('UTF-8', from, from + length);
+      str = buffer.toString('hex', from, from + length);
       break;
     default:
     case 13: // unclear
@@ -56,9 +57,18 @@ function readData(buffer, from, length, tagName){
   return [null,str,type];
 }
 
-function read(buffer, from, toRead){
+module.exports.read = function exportRead(buffer){
+  return read(buffer, 0, buffer.length, false);
+  
+}
+
+
+function read(buffer, from, toRead,isList){
   var readBytes = 0;
   var curData = [];
+  if(!isList){
+    curData = {};
+  }
   while(readBytes < toRead){
     var errTagLength = readTagLength(buffer, from + readBytes);
     var err = errTagLength[0];
@@ -67,15 +77,28 @@ function read(buffer, from, toRead){
     readBytes += 8;
     if(CC.lookUp(tagName) && CC.lookUp(tagName).type == 12){
       // console.log("list", tagName);
-      var errCur = read(buffer, readBytes + from, length);
+      var errCur = read(buffer, readBytes + from, length, true);
       readBytes += length;
+      if(isList){
+        curData[curData.length] = {};
+        curData[curData.length-1][tagName] = errCur[1];
+      }
+      else{
+        curData[tagName] = errCur[1];
+      }
       
-      curData[curData.length]= {tag: tagName,data: errCur[1]};
     }
     else{     
       var errDataType = readData(buffer, readBytes + from, length, tagName);
       readBytes += length;
-      curData[curData.length] = {tag: tagName,data:errDataType[1]};
+      if(isList){
+        curData[curData.length] = {};
+        curData[curData.length-1][tagName] = errDataType[1];
+      }
+      else{
+        curData[tagName] = errDataType[1];
+      }
+      
       if(errDataType[2] == 13){
         if(unknown[tagName] == undefined){
           unknown[tagName] = 0;
@@ -104,39 +127,40 @@ function readFile(fileName,cb){
     });//fs.stat
   });// fs.open
 }
-  
-fs.readdir( __dirname+'/sessions',function(err,files){
-  console.log("files",files);
-  var i = 0;
-  async.whilst(function(){
-    return i < files.length;
-  },function(callback){
-    if(files[i][0] == "."){
-      i++;
-      return callback();
-    }
-    console.log("open and process", files[i][0]);
-    readFile(__dirname+'/sessions/'+files[i], function(err,data){
+if(!module.parent){
+  fs.readdir( __dirname+'/sessions',function(err,files){
+    console.log("files",files);
+    var i = 0;
+    async.whilst(function(){
+      return i < files.length;
+    },function(callback){
+      if(files[i][0] == "."){
+        i++;
+        return callback();
+      }
+      console.log("open and process", files[i][0]);
+      readFile(__dirname+'/sessions/'+files[i], function(err,data){
+        if(err) throw err;
+        dat[files[i][0]] = data;
+        i++;
+        console.log("i:",i,files.length);
+        return callback();
+      });
+    },
+    function(err){
       if(err) throw err;
-      dat[files[i][0]] = data;
-      i++;
-      console.log("i:",i,files.length);
-      return callback();
+      console.log("Completed!!!");
+      fs.writeFile(__dirname+'/unknown.txt', JSON.stringify(unknown,undefined,2), function (err) {
+        if (err) throw err;
+        console.log('It\'s saved! unknown');
+      });
+      fs.writeFile(__dirname+'/dat.txt', JSON.stringify(dat,undefined,1), function (err) {
+        if (err) throw err;
+        console.log('It\'s saved! dat');
+      });
+      //console.log("dat", dat);
+      //console.log("unknown",unknown);
+        // tags not in ytrack: asgr, asse, aeMQ, aeFR, aeTR, aeSL, aeSR, aeFP, aeSX, ppro, msed, msed, msml, msma, weitere
     });
-  },
-  function(err){
-    if(err) throw err;
-    console.log("Completed!!!");
-    fs.writeFile(__dirname+'/unknown.txt', JSON.stringify(unknown,undefined,2), function (err) {
-      if (err) throw err;
-      console.log('It\'s saved! unknown');
-    });
-    fs.writeFile(__dirname+'/dat.txt', JSON.stringify(dat,undefined,1), function (err) {
-      if (err) throw err;
-      console.log('It\'s saved! dat');
-    });
-    //console.log("dat", dat);
-    //console.log("unknown",unknown);
-      // tags not in ytrack: asgr, asse, aeMQ, aeFR, aeTR, aeSL, aeSR, aeFP, aeSX, ppro, msed, msed, msml, msma, weitere
   });
-});
+}
